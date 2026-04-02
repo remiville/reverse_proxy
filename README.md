@@ -7,13 +7,13 @@ internal services via a simple CLI.
 
 ```bash
 # Add a project
-./scripts/manage.sh add myapp 3000 /myapp/
+./manage.sh add myapp 3000 /myapp/
 
 # List registered projects
-./scripts/manage.sh list
+./manage.sh list
 
 # Check proxy status
-./scripts/manage.sh status
+./manage.sh status
 ```
 
 ## Requirements
