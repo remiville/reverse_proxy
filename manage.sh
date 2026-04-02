@@ -34,7 +34,7 @@ generate_caddyfile() {
     tmp="$(mktemp)"
     {
         printf ':80 {\n'
-        jq -r '.projects[] | select(.status == "active") | "    handle \(.path)* {\n        reverse_proxy localhost:\(.port)\n    }\n"' "${PROJECTS_FILE}"
+        jq -r '.projects[] | select(.status == "active") | "    handle \(.path)* {\n        uri strip_prefix \(.path | rtrimstr("/"))\n        reverse_proxy localhost:\(.port)\n    }\n"' "${PROJECTS_FILE}"
         printf '}\n'
     } > "${tmp}"
     mv "${tmp}" "${CADDYFILE}"
