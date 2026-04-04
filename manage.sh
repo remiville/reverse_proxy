@@ -257,6 +257,7 @@ main() {
     --enable)  cmd_set_status "active" "$@" ;;
     --disable) cmd_set_status "disabled" "$@" ;;
     --list)    cmd_list ;;
+    --help)    usage ;;
     *) die "unknown option '${option}'" ;;
   esac
 }

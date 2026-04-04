@@ -147,6 +147,7 @@ main() {
     --install)   cmd_install ;;
     --uninstall) cmd_uninstall ;;
     --update)    cmd_update ;;
+    --help)      usage ;;
     *) usage; exit 1 ;;
   esac
 }
