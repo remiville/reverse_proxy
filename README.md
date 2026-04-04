@@ -6,21 +6,27 @@ internal services via a simple CLI.
 ## Quick start
 
 ```bash
+# Install dependencies and initialize config
+./install.sh --install
+
 # Add a project
-./manage.sh add myapp 3000 /myapp/
+./manage.sh --add myapp 3000 /myapp/
+
+# Start Caddy
+./manage.sh --start
 
 # List registered projects
-./manage.sh list
+./manage.sh --list
 
 # Check proxy status
-./manage.sh status
+./manage.sh --status
 ```
 
 ## Requirements
 
 - `caddy` in PATH
 - `jq` installed
-- Sufficient rights to reload Caddy (`caddy reload` or `systemctl reload caddy`)
+- Sufficient rights to run Caddy (`caddy start` / `caddy stop`)
 
 ## Configuration
 
