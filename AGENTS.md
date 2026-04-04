@@ -78,6 +78,28 @@ Add `--no-reload` to any mutating project command to skip the `caddy reload` ste
 ./manage.sh --log -f
 ```
 
+## test.sh
+
+```
+./test.sh [--keep-tmp]
+```
+
+Tests Caddyfile generation in isolated temporary directories under `/tmp/`. Does not require Caddy to be installed.
+
+| Option        | Effect                                                        |
+|---------------|---------------------------------------------------------------|
+| `--keep-tmp`  | Keep temp dirs after the run and print their paths            |
+
+Each test creates its own directory in `/tmp/reverse_proxy_test.XXXXXX` containing `projects.json` and the generated `Caddyfile`, directly at the root (no subdirectory nesting).
+
+### RP_CONFIG_DIR
+
+`manage.sh` respects the `RP_CONFIG_DIR` environment variable to override the default config directory (`~/.config/reverse_proxy`). Used by `test.sh` to redirect all I/O to the temp dir.
+
+```bash
+RP_CONFIG_DIR=/tmp/my-test-dir ./manage.sh --add myapp 3000 /myapp/ --no-reload
+```
+
 ## Conventions
 
 - **name**: alphanumeric + hyphens, unique across all projects

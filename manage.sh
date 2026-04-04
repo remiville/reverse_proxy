@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-declare -r SCRIPT_NAME
-SCRIPT_NAME="$(basename "$0")"
-declare -r CONFIG_DIR="${HOME}/.config/reverse_proxy"
+declare -r SCRIPT_NAME="$(basename "$0")"
+declare -r CONFIG_DIR="${RP_CONFIG_DIR:-${HOME}/.config/reverse_proxy}"
 declare -r PROJECTS_FILE="${CONFIG_DIR}/projects.json"
 declare -r CADDYFILE="${CONFIG_DIR}/Caddyfile"
 
@@ -34,7 +33,11 @@ generate_caddyfile() {
   tmp="$(mktemp)"
   {
     printf ':80 {\n'
-    jq -r '.projects[] | select(.status == "active") | "    handle \(.path)* {\n        uri strip_prefix \(.path | rtrimstr("/"))\n        reverse_proxy localhost:\(.port)\n    }\n"' "${PROJECTS_FILE}"
+    jq -r '
+      .projects[]
+      | select(.status == "active")
+      | "    redir \(.path | rtrimstr("/")) \(.path)\n    handle_path \(.path | rtrimstr("/"))/* {\n        reverse_proxy localhost:\(.port) {\n        }\n    }\n"
+    ' "${PROJECTS_FILE}"
     printf '}\n'
   } > "${tmp}"
   mv "${tmp}" "${CADDYFILE}"

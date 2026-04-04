@@ -34,4 +34,11 @@ State is stored in `~/.config/reverse_proxy/projects.json`.
 The `Caddyfile` at `~/.config/reverse_proxy/Caddyfile` is a generated
 artefact — do not edit it by hand.
 
+Run the test suite:
+
+```bash
+./test.sh           # run and clean up
+./test.sh --keep-tmp  # keep temp dirs for inspection
+```
+
 See [AGENTS.md](AGENTS.md) for full command reference.

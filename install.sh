@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-declare -r SCRIPT_NAME
-SCRIPT_NAME="$(basename "$0")"
+declare -r SCRIPT_NAME="$(basename "$0")"
 declare -ra DEPS=(caddy jq)
 declare -r CONFIG_DIR="${HOME}/.config/reverse_proxy"
 declare -r PROJECTS_FILE="${CONFIG_DIR}/projects.json"
