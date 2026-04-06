@@ -5,6 +5,10 @@ declare -r SCRIPT_NAME="$(basename "$0")"
 declare -ra DEPS=(caddy jq)
 declare -r CONFIG_DIR="${HOME}/.config/reverse_proxy"
 declare -r PROJECTS_FILE="${CONFIG_DIR}/projects.json"
+declare -r CADDYFILE="${CONFIG_DIR}/Caddyfile"
+declare -r SERVICE_NAME="caddy-rp"
+declare -r SYSTEMD_USER_DIR="${HOME}/.config/systemd/user"
+declare -r SERVICE_FILE="${SYSTEMD_USER_DIR}/${SERVICE_NAME}.service"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -16,7 +20,7 @@ die() {
 }
 
 ok() {
-  echo "$*"
+  echo -e "$*"
 }
 
 detect_pkg_manager() {
@@ -96,6 +100,48 @@ init_config_dir() {
   fi
 }
 
+create_service() {
+  local caddy_bin
+  caddy_bin="$(command -v caddy)"
+
+  mkdir -p "${SYSTEMD_USER_DIR}"
+  cat > "${SERVICE_FILE}" <<EOF
+[Unit]
+Description=Caddy Reverse Proxy
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=${caddy_bin} run --config ${CADDYFILE}
+ExecReload=${caddy_bin} reload --config ${CADDYFILE}
+Restart=on-failure
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=default.target
+EOF
+
+  systemctl --user daemon-reload
+  systemctl --user enable "${SERVICE_NAME}"
+  ok "Service '${SERVICE_NAME}' installed and enabled.\nWARNING: sudo loginctl enable-linger $USER must be called at least once for the service to not stop when the user logs out."
+}
+
+remove_service() {
+  if systemctl --user is-active --quiet "${SERVICE_NAME}" 2>/dev/null; then
+    systemctl --user stop "${SERVICE_NAME}"
+    ok "Service '${SERVICE_NAME}' stopped."
+  fi
+  if systemctl --user is-enabled --quiet "${SERVICE_NAME}" 2>/dev/null; then
+    systemctl --user disable "${SERVICE_NAME}"
+    ok "Service '${SERVICE_NAME}' disabled."
+  fi
+  if [[ -f "${SERVICE_FILE}" ]]; then
+    rm -f "${SERVICE_FILE}"
+    systemctl --user daemon-reload
+    ok "Removed service file: ${SERVICE_FILE}"
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
@@ -103,10 +149,12 @@ init_config_dir() {
 cmd_install() {
   install_deps
   init_config_dir
+  create_service
   ok "Installation complete."
 }
 
 cmd_uninstall() {
+  remove_service
   if [[ -d "${CONFIG_DIR}" ]]; then
     rm -rf "${CONFIG_DIR}"
     ok "Removed config directory: ${CONFIG_DIR}"

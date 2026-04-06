@@ -5,6 +5,7 @@ declare -r SCRIPT_NAME="$(basename "$0")"
 declare -r CONFIG_DIR="${RP_CONFIG_DIR:-${HOME}/.config/reverse_proxy}"
 declare -r PROJECTS_FILE="${CONFIG_DIR}/projects.json"
 declare -r CADDYFILE="${CONFIG_DIR}/Caddyfile"
+declare -r SERVICE_NAME="caddy-rp"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -32,7 +33,7 @@ generate_caddyfile() {
   local tmp
   tmp="$(mktemp)"
   {
-    printf ':80 {\n'
+    printf ':8080 {\n'
     jq -r '
       .projects[]
       | select(.status == "active")
@@ -47,44 +48,44 @@ require_caddy() {
   command -v caddy &>/dev/null || die "caddy not found in PATH"
 }
 
+require_systemctl() {
+  command -v systemctl &>/dev/null || die "systemctl not found; systemd is required"
+}
+
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
 
 cmd_start() {
-  require_caddy
+  require_systemctl
   generate_caddyfile
-  caddy start --config "${CADDYFILE}" 2>&1 || die "caddy start failed"
+  systemctl --user start "${SERVICE_NAME}" || die "systemctl --user start ${SERVICE_NAME} failed"
   ok "Caddy started."
 }
 
 cmd_restart() {
-  require_caddy
+  require_systemctl
   generate_caddyfile
-  caddy stop 2>&1 || true
-  caddy start --config "${CADDYFILE}" 2>&1 || die "caddy restart failed"
+  systemctl --user restart "${SERVICE_NAME}" || die "systemctl --user restart ${SERVICE_NAME} failed"
   ok "Caddy restarted."
 }
 
 cmd_stop() {
-  require_caddy
-  caddy stop 2>&1 || die "caddy stop failed"
+  require_systemctl
+  systemctl --user stop "${SERVICE_NAME}" || die "systemctl --user stop ${SERVICE_NAME} failed"
   ok "Caddy stopped."
 }
 
 cmd_reload() {
-  require_caddy
+  require_systemctl
   generate_caddyfile
-  caddy reload --config "${CADDYFILE}" 2>&1 || die "caddy reload failed"
+  systemctl --user reload "${SERVICE_NAME}" || die "systemctl --user reload ${SERVICE_NAME} failed"
   ok "Caddyfile regenerated and Caddy reloaded."
 }
 
 cmd_status() {
-  if pgrep -x caddy &>/dev/null; then
-    echo "Caddy: running"
-  else
-    echo "Caddy: stopped"
-  fi
+  require_systemctl
+  systemctl --user status "${SERVICE_NAME}" --no-pager || true
 
   echo ""
   echo "Caddyfile: ${CADDYFILE}"
@@ -99,14 +100,12 @@ cmd_log() {
     [[ "${arg}" == "-f" ]] && follow=1
   done
 
-  if command -v journalctl &>/dev/null; then
-    if [[ "${follow}" -eq 1 ]]; then
-      journalctl -u caddy -f
-    else
-      journalctl -u caddy
-    fi
+  command -v journalctl &>/dev/null || die "journalctl not available"
+
+  if [[ "${follow}" -eq 1 ]]; then
+    journalctl --user-unit "${SERVICE_NAME}" -f
   else
-    die "journalctl not available; check your system's service manager for caddy logs"
+    journalctl --user-unit "${SERVICE_NAME}"
   fi
 }
 
